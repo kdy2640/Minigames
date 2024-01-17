@@ -24,16 +24,16 @@ public class InputManager
 
         if(OnMouseAction != null)
         {
-            if (Input.GetMouseButton(0)) OnMouseAction.Invoke(Define.MouseEvent.Lclick);
-            if (Input.GetMouseButtonDown(0)) OnMouseAction.Invoke(Define.MouseEvent.Lhold);
+            if (Input.GetMouseButton(0)) OnMouseAction.Invoke(Define.MouseEvent.Lhold);
+            if (Input.GetMouseButtonDown(0)) OnMouseAction.Invoke(Define.MouseEvent.Lclick);
             if (Input.GetMouseButtonUp(0)) OnMouseAction.Invoke(Define.MouseEvent.Lrelease);
 
-            if (Input.GetMouseButton(1)) OnMouseAction.Invoke(Define.MouseEvent.Rclick);
-            if (Input.GetMouseButtonDown(1)) OnMouseAction.Invoke(Define.MouseEvent.Rhold);
+            if (Input.GetMouseButton(1)) OnMouseAction.Invoke(Define.MouseEvent.Rhold);
+            if (Input.GetMouseButtonDown(1)) OnMouseAction.Invoke(Define.MouseEvent.Rclick);
             if (Input.GetMouseButtonUp(1)) OnMouseAction.Invoke(Define.MouseEvent.Rrelease);
 
-            if (Input.GetMouseButton(2)) OnMouseAction.Invoke(Define.MouseEvent.Mclick);
-            if (Input.GetMouseButtonDown(2)) OnMouseAction.Invoke(Define.MouseEvent.Mhold);
+            if (Input.GetMouseButton(2)) OnMouseAction.Invoke(Define.MouseEvent.Mhold);
+            if (Input.GetMouseButtonDown(2)) OnMouseAction.Invoke(Define.MouseEvent.Mclick);
             if (Input.GetMouseButtonUp(2)) OnMouseAction.Invoke(Define.MouseEvent.Mrelease);
         }
     }
