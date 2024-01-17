@@ -74,7 +74,12 @@ public class MineSweeperGameInfo
 
     }
     // DataTable
-    public int[,] DataTable;
+    public struct module
+    {
+        public int data;
+        public bool isOpen;
+    }
+    public module[,] DataTable;
 
     public void DataTableInitialize(Difficulty _difficulty)
     {
@@ -87,13 +92,13 @@ public class MineSweeperGameInfo
         {
             int x = Random.Range(0, width);
             int y = Random.Range(0,height);
-        while (DataTable[x,y] == -1)
+        while (DataTable[x,y].data == -1)
         {
             x = Random.Range(0, width);
             y = Random.Range(0, height);
         }
 
-        DataTable[x, y] = -1;
+        DataTable[x, y].data = -1;
 
         }
         int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
@@ -103,12 +108,15 @@ public class MineSweeperGameInfo
         {
             for (int j = 0; j < height; j++)
             {
-                if (DataTable[i, j] == -1) continue;
+                DataTable[i,j].isOpen = false;
+                if (DataTable[i, j].data == -1) continue;
                 for (int k = 0; k < 8; k++)
                 {
-                    if (DataTable[Mathf.Clamp(i + checkArrayX[k], 0, width - 1), Mathf.Clamp(j + checkArrayY[k], 0, height - 1)] == -1)
+                    if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= width) continue;
+                    if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= width) continue;
+                    if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == -1)
                     {
-                        DataTable[i, j] += 1;
+                        DataTable[i, j].data += 1;
                     }
                 }
             }
@@ -134,24 +142,77 @@ public class MineSweeperGameInfo
         }
     }
 
-    public void CellOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
+    public bool CellOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
     {
         int width, height, bombCount;
         float notUsing;
         (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        DataTable[_location.x, _location.y].isOpen = true;
 
-        if (DataTable[_location.x,_location.y] > 0)
+        if (DataTable[_location.x,_location.y].data > 0)
         {
-            _map.SetTile(_location, GetTileFromSprites((CellType)(24 + DataTable[_location.x, _location.y])));
-            CellTable[_location.x, _location.y] = (CellType)(24 + DataTable[_location.x, _location.y]);
+            _map.SetTile(_location, GetTileFromSprites((CellType)(24 + DataTable[_location.x, _location.y].data)));
+            CellTable[_location.x, _location.y] = (CellType)(24 + DataTable[_location.x, _location.y].data);
+            return true;
         }
 
 
-        if (DataTable[_location.x, _location.y] == 0)
+        else if (DataTable[_location.x, _location.y].data == 0)
         {
-            _map.SetTile(_location, GetTileFromSprites(CellType.CellOpen));
-            CellTable[_location.x, _location.y] = CellType.CellOpen;
+            BlankOpen(_map, _difficulty, _location);
+            return true;
+
         }
+
+        else if (DataTable[_location.x, _location.y].data == -1)
+        {
+            _map.SetTile(_location, GetTileFromSprites(CellType.BombOpen));
+            return false;
+            
+        }
+
+        return false;
+    }
+
+    public void BlankOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
+    {
+        _map.SetTile(_location, GetTileFromSprites(CellType.CellOpen));
+        CellTable[_location.x, _location.y] = CellType.CellOpen;
+
+        int width, height, bombCount;
+        float notUsing;
+        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+
+        int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
+        int[] checkArrayY = { 1, 1, 1, 0, 0, -1, -1, -1 };
+
+        int i = _location.x; int j = _location.y;
+        DataTable[i, j].isOpen = true;
+        for (int k = 0; k < 8; k++)
+        {
+            if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= width) continue;
+            if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= width) continue;
+            if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].isOpen == false)
+            {
+                DataTable[i + checkArrayX[k], j + checkArrayY[k]].isOpen = true;
+                if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data > 0)
+                {
+                    _map.SetTile(new Vector3Int(i + checkArrayX[k], j + checkArrayY[k], -0), GetTileFromSprites((CellType)(24 + DataTable[i + checkArrayX[k], j + checkArrayY[k]].data)));
+                    CellTable[i + checkArrayX[k], j + checkArrayY[k]] = (CellType)(24 + DataTable[i + checkArrayX[k], j + checkArrayY[k]].data);
+                }
+                else if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == 0)
+                {
+                    BlankOpen(_map, _difficulty, new Vector3Int(i + checkArrayX[k], j + checkArrayY[k],-0));
+                }
+                else if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == -1)
+                {
+                    continue;
+                }
+            }
+        }
+            
+        
+
     }
 
 }

@@ -27,7 +27,7 @@ class MineSweeper : MiniGame
         //CellTable initializing
         gameInfo.CellTable = new CellType[width, height];
         gameInfo.CellTableInitialize(difficulty);
-        gameInfo.DataTable = new int[width, height];
+        gameInfo.DataTable = new module[width, height];
         gameInfo.DataTableInitialize(difficulty);
 
         //Table Setting
@@ -72,7 +72,13 @@ class MineSweeper : MiniGame
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
             if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
             {
-                gameInfo.CellOpen(_TileMap, difficulty, hitTarget);
+                if (gameInfo.DataTable[hitTarget.x,hitTarget.y].isOpen == false)
+                {
+                    gameInfo.CellOpen(_TileMap, difficulty, hitTarget);
+                }
+                Debug.Log(gameInfo.CellTable[hitTarget.x, hitTarget.y]);
+                Debug.Log(gameInfo.DataTable[hitTarget.x, hitTarget.y].data);
+                Debug.Log(gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen);
             }
         }
         else if (_event == Define.MouseEvent.Lhold)
@@ -80,25 +86,27 @@ class MineSweeper : MiniGame
             Physics.Raycast(ray.origin, ray.direction, out hit, 100f);
             Debug.DrawLine(ray.origin, ray.origin + ray.direction * 100f, Color.red);
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
+            
+            //누르고 있으면 바뀌는거
             if(hitTarget.x >=0 && hitTarget.x < width &&hitTarget.y >=0 && hitTarget.y < height)
             {
-
-                if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellClose)
+                if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellClose )
                 {
                     _TileMap.SetTile(hitTarget, gameInfo.GetTileFromSprites(CellType.CellOpen));
                     gameInfo.CellTable[hitTarget.x, hitTarget.y] = CellType.CellOpen;
 
-                    previousTarget = hitTarget;
                 }
             }
+            // 이전거랑 같지 않으면
             if (hitTarget != previousTarget)
             {
-                if (gameInfo.CellTable[previousTarget.x, previousTarget.y] == CellType.CellOpen)
+                // 이전거가 눌려있고 개방되지 않았다면
+                if (gameInfo.CellTable[previousTarget.x, previousTarget.y] == CellType.CellOpen && gameInfo.DataTable[previousTarget.x, previousTarget.y].isOpen == false)
                 {
                     _TileMap.SetTile(previousTarget, gameInfo.GetTileFromSprites(CellType.CellClose));
                     gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
-
                 }
+
                 if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
                 {
                     previousTarget = hitTarget;
