@@ -7,14 +7,14 @@ abstract class MiniGame
 {
     public enum GameStatus
     {
-        Start, Ingame,Rest, End
+        Start, InGame, Rest, End
     }
     public GameStatus status = GameStatus.Start;
 
 
     abstract public void OnStart();
 
-    abstract public void InProgress();
+    abstract public void InGame();
 
     abstract public void OnEnd();
 
@@ -39,7 +39,7 @@ abstract class MiniGame
         switch(status)
         {
             case GameStatus.Start: OnStart(); break;
-            case GameStatus.Ingame: InProgress(); break;
+            case GameStatus.InGame: InGame(); break;
             case GameStatus.Rest: break;
             case GameStatus.End: OnEnd(); break;
         }

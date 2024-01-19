@@ -37,7 +37,7 @@ public class MineSweeperGameInfo
         cOne, cTwo, cThree, cFour, cFive, cSix, cSeven, cEight, cNine, cZero, cBar, cNone,
         SmileClose, SmileOpen, ShockFace, WinFace, DeadFace, CellClose , CellOpen, Flag, QuestionClose, QeustionOpen,
         Bomb, BombOpen, BombCross,
-        One, Two, Three, Four, Five, Six, Seven, Eight, NotOpen
+        One, Two, Three, Four, Five, Six, Seven, Eight
     }
 
     private const string TILE_DIRECTORY = "Art/Sprites/MineSweeperSprites_";
