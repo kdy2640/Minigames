@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Xml.Schema;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using static MineSweeperGameInfo;
@@ -9,27 +10,91 @@ using static UnityEngine.UI.Image;
 
 public class MineSweeperGameInfo
 {
+    // TableInfo
+
+    public struct TableInfo
+    {
+        public int width;
+        public int height;
+        public int bombCount;
+        public TableInfo(int _width, int _height, int _bombCount)
+        {
+            width = _width; height = _height; bombCount = _bombCount;
+        }
+    }
+
+    public struct CameraInfo
+    {
+        public float cameraDistance;
+        public float cameraManipulator; 
+        public CameraInfo(float _cameraDistance, float _cameraManipulator)
+        {
+            cameraDistance = _cameraDistance; cameraManipulator = _cameraManipulator; 
+        }
+    }
+
+    public struct BackGroundInfo
+    {
+        public Vector3 pos;
+        public Vector3 scale;
+
+        public BackGroundInfo(Vector3 _pos , Vector3 _scale)
+        {
+            pos = _pos; scale = _scale;
+        }
+    }
+
     //Difficulty
     public enum Difficulty
     {
         Easy, Normal, Hard
     }
-    public (int, int, float,int) GetTableInfo(Difficulty _difficulty)
+    public TableInfo GetTableInfo(Difficulty _difficulty)
     {
         switch (_difficulty)
         {
             case Difficulty.Easy:
-                return (9, 9, 1.5f, 10);
+                return new TableInfo(9, 9, 10);
             case Difficulty.Normal:
-                return (16, 16, 4, 40);
+                return new TableInfo(16, 16, 40);
             case Difficulty.Hard:
-                return (30, 16, 5, 99);
+                return new TableInfo(24, 20, 99);
             default:
-                return (0, 0, 0, 0);
+                return new TableInfo(0, 0, 0);
+        }
+
+    }
+    public CameraInfo GetCameraInfo(Difficulty _difficulty)
+    {
+        switch (_difficulty)
+        {
+            case Difficulty.Easy:
+                return new CameraInfo(1.5f, 0.175f);
+            case Difficulty.Normal:
+                return new CameraInfo(2.2f, 0);
+            case Difficulty.Hard:
+                return new CameraInfo(2.7f, 0);
+            default:
+                return new CameraInfo(0, 0);
         }
 
     }
 
+    public BackGroundInfo BackGroundInitialize(Difficulty _difficulty)
+    {
+        switch (_difficulty)
+        {
+            case Difficulty.Easy:
+                return new BackGroundInfo(new Vector3(1.5f, 0.73f, 2f), new Vector3(0.5f, 1f, 0.38f));
+            case Difficulty.Normal:
+                return new BackGroundInfo(new Vector3(2f, 1.2f, 2f), new Vector3(0.64f, 1.63f, 0.48f));
+            case Difficulty.Hard:
+                return new BackGroundInfo(new Vector3(2.75f, 1.55f, 2f), new Vector3(0.85f, 1f, 0.56f));
+            default:
+                return new BackGroundInfo(Vector3.zero, Vector3.zero);
+        }
+
+    }
 
     //Cell Resource
     public enum CellType
@@ -60,13 +125,11 @@ public class MineSweeperGameInfo
     public CellType[,] CellTable;
     public void CellTableInitialize(Difficulty _difficulty)
     {
-        int width, height, bombCount;
-        float notUsing;
-        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        TableInfo tableInfo = GetTableInfo(_difficulty);
 
-        for (int i = 0; i < width; i++)
+        for (int i = 0; i < tableInfo.width; i++)
         {
-            for (int j = 0; j < height; j++)
+            for (int j = 0; j < tableInfo.height; j++)
             {
                 CellTable[i, j] = CellType.CellClose;
             }
@@ -83,19 +146,17 @@ public class MineSweeperGameInfo
 
     public void DataTableInitialize(Difficulty _difficulty)
     {
-        int width, height, bombCount;
-        float notUsing;
-        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        TableInfo tableInfo = GetTableInfo(_difficulty);
 
         //inputBomb
-        for (int i = 0; i < bombCount; i++)
+        for (int i = 0; i < tableInfo.bombCount; i++)
         {
-            int x = Random.Range(0, width);
-            int y = Random.Range(0,height);
+            int x = Random.Range(0, tableInfo.width);
+            int y = Random.Range(0,tableInfo.height);
         while (DataTable[x,y].data == -1)
         {
-            x = Random.Range(0, width);
-            y = Random.Range(0, height);
+            x = Random.Range(0, tableInfo.width);
+            y = Random.Range(0, tableInfo.height);
         }
 
         DataTable[x, y].data = -1;
@@ -104,16 +165,16 @@ public class MineSweeperGameInfo
         int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
         int[] checkArrayY = { 1, 1, 1, 0, 0, -1, -1, -1 };
         //inputMarker
-        for (int i = 0; i < width; i++)
+        for (int i = 0; i < tableInfo.width; i++)
         {
-            for (int j = 0; j < height; j++)
+            for (int j = 0; j < tableInfo.height; j++)
             {
                 DataTable[i,j].isOpen = false;
                 if (DataTable[i, j].data == -1) continue;
                 for (int k = 0; k < 8; k++)
                 {
-                    if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= width) continue;
-                    if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= width) continue;
+                    if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= tableInfo.width) continue;
+                    if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= tableInfo.height) continue;
                     if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == -1)
                     {
                         DataTable[i, j].data += 1;
@@ -127,14 +188,12 @@ public class MineSweeperGameInfo
     //TileMap
     public void TileMapInitailze(in Tilemap _map, Difficulty _difficulty)
     {
-        int width, height, bombCount;
-        float notUsing;
-        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        TableInfo tableInfo = GetTableInfo(_difficulty);
         Vector3Int origin = Vector3Int.zero;
         Tile CellClose = GetTileFromSprites(MineSweeperGameInfo.CellType.CellClose);
-        for (int i = 0; i < width; i++)
+        for (int i = 0; i < tableInfo.width; i++)
         {
-            for (int j = 0; j < height; j++)
+            for (int j = 0; j < tableInfo.height; j++)
             {
                 _map.SetTile(origin + i * Vector3Int.right + j * Vector3Int.up, CellClose);
 
@@ -144,9 +203,7 @@ public class MineSweeperGameInfo
 
     public bool CellOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
     {
-        int width, height, bombCount;
-        float notUsing;
-        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        TableInfo tableInfo = GetTableInfo(_difficulty);
         DataTable[_location.x, _location.y].isOpen = true;
 
         if (DataTable[_location.x,_location.y].data > 0)
@@ -167,6 +224,8 @@ public class MineSweeperGameInfo
         else if (DataTable[_location.x, _location.y].data == -1)
         {
             _map.SetTile(_location, GetTileFromSprites(CellType.BombOpen));
+            CellTable[_location.x, _location.y] = CellType.BombOpen;
+
             return false;
             
         }
@@ -179,9 +238,7 @@ public class MineSweeperGameInfo
         _map.SetTile(_location, GetTileFromSprites(CellType.CellOpen));
         CellTable[_location.x, _location.y] = CellType.CellOpen;
 
-        int width, height, bombCount;
-        float notUsing;
-        (width, height, notUsing, bombCount) = GetTableInfo(_difficulty);
+        TableInfo tableInfo = GetTableInfo(_difficulty);
 
         int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
         int[] checkArrayY = { 1, 1, 1, 0, 0, -1, -1, -1 };
@@ -190,8 +247,8 @@ public class MineSweeperGameInfo
         DataTable[i, j].isOpen = true;
         for (int k = 0; k < 8; k++)
         {
-            if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= width) continue;
-            if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= width) continue;
+            if (i + checkArrayX[k] < 0 || i + checkArrayX[k] >= tableInfo.width) continue;
+            if (j + checkArrayY[k] < 0 || j + checkArrayY[k] >= tableInfo.height) continue;
             if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].isOpen == false)
             {
                 DataTable[i + checkArrayX[k], j + checkArrayY[k]].isOpen = true;
@@ -214,5 +271,6 @@ public class MineSweeperGameInfo
         
 
     }
+
 
 }

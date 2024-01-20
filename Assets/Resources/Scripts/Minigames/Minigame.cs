@@ -7,16 +7,18 @@ abstract class MiniGame
 {
     public enum GameStatus
     {
-        Start, InGame, Rest, End
+        Awake, Start, InGame, Rest, End, Disable
     }
     public GameStatus status = GameStatus.Start;
 
 
+    abstract public void OnAwake();
     abstract public void OnStart();
 
     abstract public void InGame();
 
     abstract public void OnEnd();
+    abstract public void OnDisable();
 
     public static MiniGame GetMinigame(Define.MiniGameStatus _name)
     {
@@ -38,10 +40,12 @@ abstract class MiniGame
     {
         switch(status)
         {
+            case GameStatus.Awake: OnAwake(); break;
             case GameStatus.Start: OnStart(); break;
             case GameStatus.InGame: InGame(); break;
             case GameStatus.Rest: break;
             case GameStatus.End: OnEnd(); break;
+            case GameStatus.Disable: OnDisable(); break;
         }
     }
 

@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using UnityEditor.Build.Content;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Tilemaps;
 using static MineSweeperGameInfo;
+using TMPro;
+using UnityEngine.UIElements;
 
 class MineSweeper : MiniGame
 {
@@ -13,31 +16,66 @@ class MineSweeper : MiniGame
     Manager manager;
     MineSweeperGameInfo gameInfo;
     MineSweeperGameInfo.Difficulty difficulty = MineSweeperGameInfo.Difficulty.Easy;
-    int width, height, bombCount;
-    float cameraDistance;
+    TableInfo tableInfo;
+    CameraInfo cameraInfo;
+    TMP_Dropdown dropDown;
+    GameObject backGround;
 
     void TableInit()
     {
-        (width, height,cameraDistance, bombCount) = gameInfo.GetTableInfo(difficulty);
+        tableInfo = gameInfo.GetTableInfo(difficulty);
+        cameraInfo = gameInfo.GetCameraInfo(difficulty);
+
         GameObject go = GameObject.FindGameObjectsWithTag("@TileMap")[0];
         _TileMap = go.GetComponent<Tilemap>();
-        
         //Camera Setting
-        Vector3 midPoint  = _TileMap.CellToWorld(new Vector3Int(width / 2, height / 2));
-        Camera.main.transform.position = midPoint + Vector3.back * cameraDistance;
+        Vector3 midPoint  = _TileMap.CellToWorld(new Vector3Int(tableInfo.width / 2, tableInfo.height / 2));
+        Camera.main.transform.position = midPoint + Vector3.back * cameraInfo.cameraDistance + Vector3.up * cameraInfo.cameraManipulator;
 
         //CellTable initializing
-        gameInfo.CellTable = new CellType[width, height];
+        gameInfo.CellTable = new CellType[tableInfo.width, tableInfo.height];
         gameInfo.CellTableInitialize(difficulty);
-        gameInfo.DataTable = new module[width, height];
+        gameInfo.DataTable = new module[tableInfo.width, tableInfo.height];
         gameInfo.DataTableInitialize(difficulty);
 
         //Table Setting
         gameInfo.TileMapInitailze(_TileMap, difficulty);
 
+        //BackGround setting
+        GameObject backGround = GameObject.Instantiate(Resources.Load<GameObject>("Prefabs/Desk"));
+        BackGroundInfo backGroundInfo = gameInfo.BackGroundInitialize(difficulty);
+        backGround.transform.position = backGroundInfo.pos; backGround.transform.localScale = backGroundInfo.scale;
+
 
     }
     
+    void InterfaceInit()
+    {
+
+    }
+    void InterfaceUpdate()
+    {
+    }
+    void ChangeDifficulty(TMP_Dropdown _dropDown)
+    {
+        switch(_dropDown.value)
+        {
+            case 0:
+                difficulty = Difficulty.Easy;
+                break;
+            case 1:
+                difficulty = Difficulty.Normal;
+                break;
+            case 2:
+                difficulty = Difficulty.Hard;
+                break;
+
+        }
+        _TileMap.ClearAllTiles();
+        GameObject.Destroy(GameObject.FindGameObjectWithTag("BackGround"));
+        status = GameStatus.Start;
+
+    }
     override public void OnStart()
     {
         manager = Manager.manager;
@@ -49,7 +87,11 @@ class MineSweeper : MiniGame
         gameInfo = new MineSweeperGameInfo();
 
         TableInit();
+        InterfaceInit();
 
+        GameObject go = GameObject.FindGameObjectsWithTag("DifficultySelect")[0];
+        dropDown = go.GetComponent<TMP_Dropdown>();
+        dropDown.onValueChanged.AddListener(delegate { ChangeDifficulty(dropDown); });
 
         status = GameStatus.InGame;
     }
@@ -78,7 +120,27 @@ class MineSweeper : MiniGame
             Debug.DrawLine(ray.origin, ray.origin + ray.direction * 100f, Color.red, 1f);
             Physics.Raycast(ray.origin, ray.direction, out hit, 100f);
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            // 이전거랑 같지 않으면
+            if (hitTarget != previousTarget)
+            {
+                // 이전거가 눌려있고 개방되지 않았다면
+                if (gameInfo.CellTable[previousTarget.x, previousTarget.y] == CellType.CellOpen && gameInfo.DataTable[previousTarget.x, previousTarget.y].isOpen == false)
+                {
+                    _TileMap.SetTile(previousTarget, gameInfo.GetTileFromSprites(CellType.CellClose));
+                    gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
+                }
+
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
+                {
+                    previousTarget = hitTarget;
+                }
+                else
+                {
+                    previousTarget = Vector3Int.zero;
+                }
+            }
+
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 if (gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen == false && gameInfo.CellTable[hitTarget.x, hitTarget.y] != CellType.Flag)
                 {
@@ -93,7 +155,7 @@ class MineSweeper : MiniGame
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
 
             //누르고 있으면 바뀌는거
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellClose)
                 {
@@ -112,7 +174,7 @@ class MineSweeper : MiniGame
                     gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
                 }
 
-                if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
                 {
                     previousTarget = hitTarget;
                 }
@@ -127,7 +189,26 @@ class MineSweeper : MiniGame
             Debug.DrawLine(ray.origin, ray.origin + ray.direction * 100f, Color.red, 1f);
             Physics.Raycast(ray.origin, ray.direction, out hit, 100f);
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            // 이전거랑 같지 않으면
+            if (hitTarget != previousTarget)
+            {
+                // 이전거가 눌려있고 개방되지 않았다면
+                if (gameInfo.CellTable[previousTarget.x, previousTarget.y] == CellType.CellOpen && gameInfo.DataTable[previousTarget.x, previousTarget.y].isOpen == false)
+                {
+                    _TileMap.SetTile(previousTarget, gameInfo.GetTileFromSprites(CellType.CellClose));
+                    gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
+                }
+
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
+                {
+                    previousTarget = hitTarget;
+                }
+                else
+                {
+                    previousTarget = Vector3Int.zero;
+                }
+            }
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.Flag)
                 {
@@ -141,6 +222,7 @@ class MineSweeper : MiniGame
                     _TileMap.SetTile(hitTarget, gameInfo.GetTileFromSprites(CellType.Flag));
 
                 }
+
             }
         }
         else if (_event == Define.MouseEvent.Rhold)
@@ -150,7 +232,7 @@ class MineSweeper : MiniGame
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
 
             //누르고 있으면 바뀌는거
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellClose)
                 {
@@ -169,7 +251,7 @@ class MineSweeper : MiniGame
                     gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
                 }
 
-                if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
                 {
                     previousTarget = hitTarget;
                 }
@@ -185,11 +267,52 @@ class MineSweeper : MiniGame
             Physics.Raycast(ray.origin, ray.direction, out hit, 100f);
             Vector3Int hitTarget = _TileMap.WorldToCell(hit.point);
 
+
+            int x = 0; int y = 0;
+            // 이전셀과 같지 않으면 상호작용
+            if (hitTarget != previousTarget)
+            {
+                // 이전셀이 개방되있지 않은데 변형된 셀이면 다시 닫음
+                if (gameInfo.CellTable[previousTarget.x, previousTarget.y] == CellType.CellOpen && gameInfo.DataTable[previousTarget.x, previousTarget.y].isOpen == false)
+                {
+                    _TileMap.SetTile(previousTarget, gameInfo.GetTileFromSprites(CellType.CellClose));
+                    gameInfo.CellTable[previousTarget.x, previousTarget.y] = CellType.CellClose;
+                }
+
+                //주변 셀 적용
+                x = 0; y = 0;
+                for (int i = 0; i < 8; i++)
+                {
+                    x = previousTarget.x + checkArrayX[i]; y = previousTarget.y + checkArrayY[i];
+
+                    // 인덱스 조건
+                    if (x < 0 || x >= tableInfo.width) continue;
+                    if (y < 0 || y >= tableInfo.height) continue;
+
+                    //개방되지 않았는데 열린 셀이면 닫힌 걸로 바꿔줌
+                    if (gameInfo.CellTable[x, y] == CellType.CellOpen && gameInfo.DataTable[x, y].isOpen == false)
+                    {
+                        gameInfo.CellTable[x, y] = CellType.CellClose;
+                        _TileMap.SetTile(new Vector3Int(x, y, 0), gameInfo.GetTileFromSprites(CellType.CellClose));
+                    }
+                }
+
+                // 현재셀을 이전셀로 변경
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
+                {
+                    previousTarget = hitTarget;
+                }
+                else // 바깥으로 나가면
+                {
+                    previousTarget = Vector3Int.zero;
+                }
+            }
+
             // 선택한 셀이 개방되지 않은 셀이거나, 개방된 숫자셀임에도 주변에 숫자만큼의 깃발이 없다면 
             // 본인과 주변의 셀변형을 없앰
-            int x = 0; int y = 0;
+            x = 0; y = 0;
             // 범위 확인
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 CellType hitCell = gameInfo.CellTable[hitTarget.x, hitTarget.y];
                 if (hitCell == CellType.CellOpen && gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen == false)
@@ -202,8 +325,8 @@ class MineSweeper : MiniGame
                     {
                         x = hitTarget.x + checkArrayX[i]; y = hitTarget.y + checkArrayY[i];
                         // 인덱스 조건
-                        if (x < 0 || x >= width) continue;
-                        if (y < 0 || y >= width) continue;
+                        if (x < 0 || x >= tableInfo.width) continue;
+                        if (y < 0 || y >= tableInfo.height) continue;
 
                         //개방되지 않았는데 변형된 셀이면 바꿔줌
                         if (gameInfo.CellTable[x, y] == CellType.CellOpen && gameInfo.DataTable[x, y].isOpen == false)
@@ -216,14 +339,13 @@ class MineSweeper : MiniGame
                 else if ((int)hitCell > 24 && (int)hitCell < 33)
                 {
                     int flagCount = 0;
-                    bool misMatch = false;
                     //깃발 개수 확인
                     for (int i = 0; i < 8; i++)
                     {
                         x = hitTarget.x + checkArrayX[i]; y = hitTarget.y + checkArrayY[i];
                         // 인덱스 조건
-                        if (x < 0 || x >= width) continue;
-                        if (y < 0 || y >= width) continue;
+                        if (x < 0 || x >= tableInfo.width) continue;
+                        if (y < 0 || y >= tableInfo.height) continue;
 
                         // 깃발 개수 확인
                         if (gameInfo.CellTable[x, y] == CellType.Flag) ++flagCount;
@@ -236,8 +358,8 @@ class MineSweeper : MiniGame
                         {
                             x = hitTarget.x + checkArrayX[i]; y = hitTarget.y + checkArrayY[i];
                             // 인덱스 조건
-                            if (x < 0 || x >= width) continue;
-                            if (y < 0 || y >= width) continue;
+                            if (x < 0 || x >= tableInfo.width) continue;
+                            if (y < 0 || y >= tableInfo.height) continue;
 
                             //개방되지 않았는데 변형된 셀이면 바꿔줌
                             if (gameInfo.CellTable[x, y] == CellType.CellOpen && gameInfo.DataTable[x, y].isOpen == false)
@@ -253,8 +375,8 @@ class MineSweeper : MiniGame
                         {
                             x = hitTarget.x + checkArrayX[i]; y = hitTarget.y + checkArrayY[i];
                             // 인덱스 조건
-                            if (x < 0 || x >= width) continue;
-                            if (y < 0 || y >= width) continue;
+                            if (x < 0 || x >= tableInfo.width) continue;
+                            if (y < 0 || y >= tableInfo.height) continue;
 
                             // 깃발을 제외하고 개방
                             if (gameInfo.CellTable[x, y] != CellType.Flag)
@@ -267,7 +389,7 @@ class MineSweeper : MiniGame
                 }
             }
             // 주변 셀 적용
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 for (int i = 0; i < 8; i++)
                 {
@@ -300,8 +422,8 @@ class MineSweeper : MiniGame
                     x = previousTarget.x + checkArrayX[i]; y = previousTarget.y + checkArrayY[i];
 
                     // 인덱스 조건
-                    if (x < 0 || x >= width) continue;
-                    if (y < 0 || y >= width) continue;
+                    if (x < 0 || x >= tableInfo.width) continue;
+                    if (y < 0 || y >= tableInfo.height) continue;
 
                     //개방되지 않았는데 열린 셀이면 닫힌 걸로 바꿔줌
                     if (gameInfo.CellTable[x, y] == CellType.CellOpen && gameInfo.DataTable[x,y].isOpen == false)
@@ -312,7 +434,7 @@ class MineSweeper : MiniGame
                 }
 
                 // 현재셀을 이전셀로 변경
-                if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+                if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
                 {
                     previousTarget = hitTarget;
                 }
@@ -322,7 +444,7 @@ class MineSweeper : MiniGame
                 }
             }
             //누르고 있으면 바뀌는거
-            if (hitTarget.x >= 0 && hitTarget.x < width && hitTarget.y >= 0 && hitTarget.y < height)
+            if (hitTarget.x >= 0 && hitTarget.x < tableInfo.width && hitTarget.y >= 0 && hitTarget.y < tableInfo.height)
             {
                 // 닫힌 셀과 숫자에만 적용
                 if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellClose || ((int)gameInfo.CellTable[hitTarget.x, hitTarget.y] > 24 && (int)gameInfo.CellTable[hitTarget.x, hitTarget.y] < 33) )
@@ -342,8 +464,8 @@ class MineSweeper : MiniGame
                         x = hitTarget.x + checkArrayX[i]; y = hitTarget.y + checkArrayY[i];
                         
                         // 인덱스 조건
-                        if (x < 0 || x >= width) continue;
-                        if (y < 0 || y >= width) continue;
+                        if (x < 0 || x >= tableInfo.width) continue;
+                        if (y < 0 || y >= tableInfo.height) continue;
 
                         //닫힌 셀이면 여는 걸로 바꿔줌
                         if (gameInfo.CellTable[x,y] == CellType.CellClose)
@@ -357,6 +479,8 @@ class MineSweeper : MiniGame
                 }
             }
         }
+
+        InterfaceUpdate();
     }
 
 
@@ -365,5 +489,15 @@ class MineSweeper : MiniGame
     void Update()
     {
         
+    }
+
+    public override void OnAwake()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void OnDisable()
+    {
+        throw new System.NotImplementedException();
     }
 }
