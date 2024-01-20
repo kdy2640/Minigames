@@ -6,8 +6,6 @@ TagManager:
   tags:
   - '@Manager'
   - '@TileMap'
-  - DifficultySelect
-  - BackGround
   layers:
   - Default
   - TransparentFX

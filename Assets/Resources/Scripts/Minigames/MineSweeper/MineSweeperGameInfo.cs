@@ -25,11 +25,10 @@ public class MineSweeperGameInfo
 
     public struct CameraInfo
     {
-        public float cameraDistance;
-        public float cameraManipulator; 
-        public CameraInfo(float _cameraDistance, float _cameraManipulator)
+        public Vector3 cameraPos;
+        public CameraInfo(Vector3 _cameraPos)
         {
-            cameraDistance = _cameraDistance; cameraManipulator = _cameraManipulator; 
+            cameraPos = _cameraPos;
         }
     }
 
@@ -69,13 +68,13 @@ public class MineSweeperGameInfo
         switch (_difficulty)
         {
             case Difficulty.Easy:
-                return new CameraInfo(1.5f, 0.175f);
+                return new CameraInfo(new Vector3(0.85f, 0.65f,-1.3f));
             case Difficulty.Normal:
-                return new CameraInfo(2.2f, 0);
+                return new CameraInfo(new Vector3(1.45f, 1.2f,-2.2f));
             case Difficulty.Hard:
-                return new CameraInfo(2.7f, 0);
+                return new CameraInfo(new Vector3(1.8f, 1.5f,-2.7f));
             default:
-                return new CameraInfo(0, 0);
+                return new CameraInfo(new Vector3(0, 0,0));
         }
 
     }
@@ -85,9 +84,9 @@ public class MineSweeperGameInfo
         switch (_difficulty)
         {
             case Difficulty.Easy:
-                return new BackGroundInfo(new Vector3(1.5f, 0.73f, 2f), new Vector3(0.5f, 1f, 0.38f));
+                return new BackGroundInfo(new Vector3(1.79f, 0.45f, 2f), new Vector3(0.65f, 1f, 0.5f));
             case Difficulty.Normal:
-                return new BackGroundInfo(new Vector3(2f, 1.2f, 2f), new Vector3(0.64f, 1.63f, 0.48f));
+                return new BackGroundInfo(new Vector3(2.24f, 1.2f, 2f), new Vector3(0.74f, 1.63f, 0.55f));
             case Difficulty.Hard:
                 return new BackGroundInfo(new Vector3(2.75f, 1.55f, 2f), new Vector3(0.85f, 1f, 0.56f));
             default:
@@ -243,6 +242,8 @@ public class MineSweeperGameInfo
         int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
         int[] checkArrayY = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
+        bool trigger = true;
+
         int i = _location.x; int j = _location.y;
         DataTable[i, j].isOpen = true;
         for (int k = 0; k < 8; k++)
@@ -267,8 +268,7 @@ public class MineSweeperGameInfo
                 }
             }
         }
-            
-        
+
 
     }
 

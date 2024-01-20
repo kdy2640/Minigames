@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Build.Content;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+
 using UnityEngine.UI;
 using UnityEngine.Tilemaps;
 using static MineSweeperGameInfo;
@@ -18,7 +17,7 @@ class MineSweeper : MiniGame
     MineSweeperGameInfo.Difficulty difficulty = MineSweeperGameInfo.Difficulty.Easy;
     TableInfo tableInfo;
     CameraInfo cameraInfo;
-    TMP_Dropdown dropDown;
+    TMP_Dropdown difficultSelector;
     GameObject backGround;
 
     void TableInit()
@@ -30,7 +29,7 @@ class MineSweeper : MiniGame
         _TileMap = go.GetComponent<Tilemap>();
         //Camera Setting
         Vector3 midPoint  = _TileMap.CellToWorld(new Vector3Int(tableInfo.width / 2, tableInfo.height / 2));
-        Camera.main.transform.position = midPoint + Vector3.back * cameraInfo.cameraDistance + Vector3.up * cameraInfo.cameraManipulator;
+        Camera.main.transform.position = cameraInfo.cameraPos;
 
         //CellTable initializing
         gameInfo.CellTable = new CellType[tableInfo.width, tableInfo.height];
@@ -42,7 +41,7 @@ class MineSweeper : MiniGame
         gameInfo.TileMapInitailze(_TileMap, difficulty);
 
         //BackGround setting
-        GameObject backGround = GameObject.Instantiate(Resources.Load<GameObject>("Prefabs/Desk"));
+        backGround = GameObject.Instantiate(Resources.Load<GameObject>("Prefabs/Desk"));
         BackGroundInfo backGroundInfo = gameInfo.BackGroundInitialize(difficulty);
         backGround.transform.position = backGroundInfo.pos; backGround.transform.localScale = backGroundInfo.scale;
 
@@ -51,14 +50,20 @@ class MineSweeper : MiniGame
     
     void InterfaceInit()
     {
+        GameObject go = GameObject.Find("DifficultySelect");
+        difficultSelector = go.GetComponent<TMP_Dropdown>();
+        difficultSelector.onValueChanged.AddListener(delegate { ChangeDifficulty(difficultSelector); });
+
+
 
     }
     void InterfaceUpdate()
     {
+
     }
-    void ChangeDifficulty(TMP_Dropdown _dropDown)
+    void ChangeDifficulty(TMP_Dropdown _difficultSelector)
     {
-        switch(_dropDown.value)
+        switch(_difficultSelector.value)
         {
             case 0:
                 difficulty = Difficulty.Easy;
@@ -72,7 +77,7 @@ class MineSweeper : MiniGame
 
         }
         _TileMap.ClearAllTiles();
-        GameObject.Destroy(GameObject.FindGameObjectWithTag("BackGround"));
+        GameObject.Destroy(backGround);
         status = GameStatus.Start;
 
     }
@@ -89,10 +94,6 @@ class MineSweeper : MiniGame
         TableInit();
         InterfaceInit();
 
-        GameObject go = GameObject.FindGameObjectsWithTag("DifficultySelect")[0];
-        dropDown = go.GetComponent<TMP_Dropdown>();
-        dropDown.onValueChanged.AddListener(delegate { ChangeDifficulty(dropDown); });
-
         status = GameStatus.InGame;
     }
     override public void InGame()
@@ -101,7 +102,8 @@ class MineSweeper : MiniGame
     }
     override public void OnEnd()
     {
-
+        // 종료 사운드
+        // 메시지 
     }
 
     Vector3Int previousTarget = Vector3Int.zero;
@@ -144,7 +146,7 @@ class MineSweeper : MiniGame
             {
                 if (gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen == false && gameInfo.CellTable[hitTarget.x, hitTarget.y] != CellType.Flag)
                 {
-                    gameInfo.CellOpen(_TileMap, difficulty, hitTarget);
+                    if (gameInfo.CellOpen(_TileMap, difficulty, hitTarget) == false) status = GameStatus.End;
                 }
             }
         }
@@ -381,7 +383,7 @@ class MineSweeper : MiniGame
                             // 깃발을 제외하고 개방
                             if (gameInfo.CellTable[x, y] != CellType.Flag)
                             {
-                                gameInfo.CellOpen(_TileMap, difficulty, new Vector3Int(x, y, 0));
+                                if (gameInfo.CellOpen(_TileMap, difficulty, new Vector3Int(x, y, 0)) == false) status = GameStatus.End;
                             }
                         }
                         
