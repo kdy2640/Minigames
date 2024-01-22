@@ -24,8 +24,11 @@ abstract class MiniGame
     public static MiniGame GetMinigame(Define.MiniGameStatus _name)
     {
         MiniGame mg = null;
-        switch (_name) 
+        switch (_name)
         {
+            case Define.MiniGameStatus.GameSelect:
+                mg = new GameSelect();
+                break;
             case Define.MiniGameStatus.MineSweeper:
                 mg = new MineSweeper();
                 break;
