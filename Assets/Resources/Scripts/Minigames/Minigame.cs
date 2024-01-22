@@ -7,7 +7,7 @@ abstract class MiniGame
 {
     public enum GameStatus
     {
-        Awake, Start, InGame, Rest, End, Disable
+        Awake, Start, InGame, Rest, Win, Fail, End
     }
     public GameStatus status = GameStatus.Start;
 
@@ -17,8 +17,9 @@ abstract class MiniGame
 
     abstract public void InGame();
 
+    abstract public void OnWin();
+    abstract public void OnFail();
     abstract public void OnEnd();
-    abstract public void OnDisable();
 
     public static MiniGame GetMinigame(Define.MiniGameStatus _name)
     {
@@ -44,8 +45,9 @@ abstract class MiniGame
             case GameStatus.Start: OnStart(); break;
             case GameStatus.InGame: InGame(); break;
             case GameStatus.Rest: break;
+            case GameStatus.Win: OnWin(); break;
+            case GameStatus.Fail: OnFail(); break;
             case GameStatus.End: OnEnd(); break;
-            case GameStatus.Disable: OnDisable(); break;
         }
     }
 

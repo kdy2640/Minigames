@@ -200,40 +200,36 @@ public class MineSweeperGameInfo
         }
     }
 
-    public bool CellOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
+    public int CellOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
     {
+
         TableInfo tableInfo = GetTableInfo(_difficulty);
         DataTable[_location.x, _location.y].isOpen = true;
-
         if (DataTable[_location.x,_location.y].data > 0)
         {
             _map.SetTile(_location, GetTileFromSprites((CellType)(24 + DataTable[_location.x, _location.y].data)));
             CellTable[_location.x, _location.y] = (CellType)(24 + DataTable[_location.x, _location.y].data);
-            return true;
+            return 1;
         }
-
-
         else if (DataTable[_location.x, _location.y].data == 0)
         {
-            BlankOpen(_map, _difficulty, _location);
-            return true;
+            return BlankOpen(_map, _difficulty, _location);
 
         }
-
         else if (DataTable[_location.x, _location.y].data == -1)
         {
             _map.SetTile(_location, GetTileFromSprites(CellType.BombOpen));
             CellTable[_location.x, _location.y] = CellType.BombOpen;
 
-            return false;
+            return 0;
             
         }
-
-        return false;
+        return 0;
     }
 
-    public void BlankOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
+    public int BlankOpen(in Tilemap _map, Difficulty _difficulty, Vector3Int _location)
     {
+        int output = 1;
         _map.SetTile(_location, GetTileFromSprites(CellType.CellOpen));
         CellTable[_location.x, _location.y] = CellType.CellOpen;
 
@@ -242,7 +238,6 @@ public class MineSweeperGameInfo
         int[] checkArrayX = { -1, 0, 1, -1, 1, -1, 0, 1 };
         int[] checkArrayY = { 1, 1, 1, 0, 0, -1, -1, -1 };
 
-        bool trigger = true;
 
         int i = _location.x; int j = _location.y;
         DataTable[i, j].isOpen = true;
@@ -255,12 +250,13 @@ public class MineSweeperGameInfo
                 DataTable[i + checkArrayX[k], j + checkArrayY[k]].isOpen = true;
                 if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data > 0)
                 {
+                    output++;
                     _map.SetTile(new Vector3Int(i + checkArrayX[k], j + checkArrayY[k], -0), GetTileFromSprites((CellType)(24 + DataTable[i + checkArrayX[k], j + checkArrayY[k]].data)));
                     CellTable[i + checkArrayX[k], j + checkArrayY[k]] = (CellType)(24 + DataTable[i + checkArrayX[k], j + checkArrayY[k]].data);
                 }
                 else if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == 0)
                 {
-                    BlankOpen(_map, _difficulty, new Vector3Int(i + checkArrayX[k], j + checkArrayY[k],-0));
+                    output += BlankOpen(_map, _difficulty, new Vector3Int(i + checkArrayX[k], j + checkArrayY[k],-0));
                 }
                 else if (DataTable[i + checkArrayX[k], j + checkArrayY[k]].data == -1)
                 {
@@ -268,6 +264,8 @@ public class MineSweeperGameInfo
                 }
             }
         }
+
+        return output;
 
 
     }

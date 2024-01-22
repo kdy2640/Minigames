@@ -15,11 +15,13 @@ class MineSweeper : MiniGame
     Manager manager;
     MineSweeperGameInfo gameInfo;
     MineSweeperGameInfo.Difficulty difficulty = MineSweeperGameInfo.Difficulty.Easy;
-    TableInfo tableInfo;
-    CameraInfo cameraInfo;
-    TMP_Dropdown difficultSelector;
+    TableInfo tableInfo; CameraInfo cameraInfo;
     GameObject backGround;
+    UnityEngine.UI.Button faceButton;
+    MineSweeperSound audio;
 
+
+    int LeftCellCount;
     void TableInit()
     {
         tableInfo = gameInfo.GetTableInfo(difficulty);
@@ -45,21 +47,36 @@ class MineSweeper : MiniGame
         BackGroundInfo backGroundInfo = gameInfo.BackGroundInitialize(difficulty);
         backGround.transform.position = backGroundInfo.pos; backGround.transform.localScale = backGroundInfo.scale;
 
-
     }
     
     void InterfaceInit()
     {
         GameObject go = GameObject.Find("DifficultySelect");
-        difficultSelector = go.GetComponent<TMP_Dropdown>();
+        TMP_Dropdown difficultSelector = go.GetComponent<TMP_Dropdown>();
         difficultSelector.onValueChanged.AddListener(delegate { ChangeDifficulty(difficultSelector); });
 
-
+        go = GameObject.Find("FaceButton");
+        faceButton = go.GetComponent<UnityEngine.UI.Button>();
+        faceButton.onClick.AddListener(delegate { ChangeDifficulty(difficultSelector); });
+        faceButton.GetComponent<UnityEngine.UI.Image>().sprite = Resources.Load<Tile>("Art/Sprites/MineSweeperSprites_12").sprite;
 
     }
     void InterfaceUpdate()
     {
-
+        switch(status)
+        {
+            case GameStatus.Rest:
+                faceButton.GetComponent<UnityEngine.UI.Image>().sprite = Resources.Load<Tile>("Art/Sprites/MineSweeperSprites_12").sprite;
+                break;
+            case GameStatus.Win:
+                faceButton.GetComponent<UnityEngine.UI.Image>().sprite = Resources.Load<Tile>("Art/Sprites/MineSweeperSprites_15").sprite;
+                break;
+            case GameStatus.Fail:
+                faceButton.GetComponent<UnityEngine.UI.Image>().sprite = Resources.Load<Tile>("Art/Sprites/MineSweeperSprites_16").sprite;
+                break;
+            default:
+                break;
+        }
     }
     void ChangeDifficulty(TMP_Dropdown _difficultSelector)
     {
@@ -94,13 +111,21 @@ class MineSweeper : MiniGame
         TableInit();
         InterfaceInit();
 
+        LeftCellCount = tableInfo.width * tableInfo.height - tableInfo.bombCount;
+        audio = new MineSweeperSound();
+
         status = GameStatus.InGame;
     }
     override public void InGame()
     {
         status = GameStatus.Rest;
     }
-    override public void OnEnd()
+    override public void OnWin()
+    {
+        // 종료 사운드
+        // 메시지 
+    }
+    override public void OnFail()
     {
         // 종료 사운드
         // 메시지 
@@ -146,7 +171,16 @@ class MineSweeper : MiniGame
             {
                 if (gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen == false && gameInfo.CellTable[hitTarget.x, hitTarget.y] != CellType.Flag)
                 {
-                    if (gameInfo.CellOpen(_TileMap, difficulty, hitTarget) == false) status = GameStatus.End;
+                    int check = gameInfo.CellOpen(_TileMap, difficulty, hitTarget);
+                    if (check == 0)
+                    { status = GameStatus.Fail;
+                        audio.Play(MineSweeperSound.SoundType.Fail);
+                    }
+                    else
+                    {
+                        audio.Play(MineSweeperSound.SoundType.Click);
+                        LeftCellCount -= check;
+                    } 
                 }
             }
         }
@@ -216,13 +250,13 @@ class MineSweeper : MiniGame
                 {
                     gameInfo.CellTable[hitTarget.x, hitTarget.y] = CellType.CellClose;
                     _TileMap.SetTile(hitTarget, gameInfo.GetTileFromSprites(CellType.CellClose));
-
+                    audio.Play(MineSweeperSound.SoundType.DeFlag);
                 }
                 else if (gameInfo.CellTable[hitTarget.x, hitTarget.y] == CellType.CellOpen && gameInfo.DataTable[hitTarget.x, hitTarget.y].isOpen == false)
                 {
                     gameInfo.CellTable[hitTarget.x, hitTarget.y] = CellType.Flag;
                     _TileMap.SetTile(hitTarget, gameInfo.GetTileFromSprites(CellType.Flag));
-
+                    audio.Play(MineSweeperSound.SoundType.Flag);
                 }
 
             }
@@ -381,9 +415,19 @@ class MineSweeper : MiniGame
                             if (y < 0 || y >= tableInfo.height) continue;
 
                             // 깃발을 제외하고 개방
-                            if (gameInfo.CellTable[x, y] != CellType.Flag)
+                            if (gameInfo.CellTable[x, y] != CellType.Flag && gameInfo.DataTable[x,y].isOpen == false)
                             {
-                                if (gameInfo.CellOpen(_TileMap, difficulty, new Vector3Int(x, y, 0)) == false) status = GameStatus.End;
+                                int check = gameInfo.CellOpen(_TileMap, difficulty, new Vector3Int(x,y,0));
+                                if (check == 0)
+                                {
+                                    status = GameStatus.Fail;
+                                    audio.Play(MineSweeperSound.SoundType.Fail);
+                                }
+                                else
+                                {
+                                    audio.Play(MineSweeperSound.SoundType.Click);
+                                    LeftCellCount -= check;
+                                }
                             }
                         }
                         
@@ -482,6 +526,14 @@ class MineSweeper : MiniGame
             }
         }
 
+        if (status != GameStatus.Fail && LeftCellCount == 0)
+        {
+            status = GameStatus.Win;
+            audio.Play(MineSweeperSound.SoundType.Win);
+        }
+
+        Debug.Log($"LeftCellCount is {LeftCellCount}! ");
+
         InterfaceUpdate();
     }
 
@@ -498,8 +550,8 @@ class MineSweeper : MiniGame
         throw new System.NotImplementedException();
     }
 
-    public override void OnDisable()
-    {
+    public override void OnEnd()
+    { 
         throw new System.NotImplementedException();
     }
 }
