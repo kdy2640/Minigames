@@ -25,8 +25,8 @@ public class Manager : MonoBehaviour
         get { return _game;}
     }
 
-    private static Define.MiniGameStatus _gameName = Define.MiniGameStatus.GameSelect;
-    public Define.MiniGameStatus gameName { get { return _gameName;} set { _game = MiniGame.GetMinigame(value);  _gameName = value;  } }
+    private static Define.MiniGameType _gameName = Define.MiniGameType.GameSelect;
+    public Define.MiniGameType gameName { get { return _gameName;} set { _game = MiniGame.GetMinigame(value);  _gameName = value;  } }
 
     private static void init()
     {

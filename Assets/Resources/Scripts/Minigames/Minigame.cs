@@ -21,15 +21,15 @@ abstract class MiniGame
     abstract public void OnFail();
     abstract public void OnEnd();
 
-    public static MiniGame GetMinigame(Define.MiniGameStatus _name)
+    public static MiniGame GetMinigame(Define.MiniGameType _name)
     {
         MiniGame mg = null;
         switch (_name)
         {
-            case Define.MiniGameStatus.GameSelect:
+            case Define.MiniGameType.GameSelect:
                 mg = new GameSelect();
                 break;
-            case Define.MiniGameStatus.MineSweeper:
+            case Define.MiniGameType.MineSweeper:
                 mg = new MineSweeper();
                 break;
             default:

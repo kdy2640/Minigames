@@ -13,9 +13,10 @@ public class Define
 
 
 
-    public enum MiniGameStatus
+    public enum MiniGameType
     {
+        MineSweeper,
         GameSelect,
-        MineSweeper
+        Count
     }
 }
