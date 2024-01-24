@@ -27,7 +27,8 @@ class MineSweeper : MiniGame
         tableInfo = gameInfo.GetTableInfo(difficulty);
         cameraInfo = gameInfo.GetCameraInfo(difficulty);
 
-        GameObject go = GameObject.FindGameObjectsWithTag("@TileMap")[0];
+        GameObject go = GameObject.FindWithTag("@TileMap");
+        if (go == null) Debug.Log("There is no tilemap!");
         _TileMap = go.GetComponent<Tilemap>();
         //Camera Setting
         Vector3 midPoint  = _TileMap.CellToWorld(new Vector3Int(tableInfo.width / 2, tableInfo.height / 2));
@@ -59,6 +60,12 @@ class MineSweeper : MiniGame
         faceButton = go.GetComponent<UnityEngine.UI.Button>();
         faceButton.onClick.AddListener(delegate { ChangeDifficulty(difficultSelector); });
         faceButton.GetComponent<UnityEngine.UI.Image>().sprite = Resources.Load<Tile>("Art/Sprites/MineSweeperSprites_12").sprite;
+
+        go = GameObject.Find("ExitButton");
+        UnityEngine.UI.Button exitButton = go.GetComponent<UnityEngine.UI.Button>();
+        exitButton.onClick.AddListener(delegate { manager.ChangeMiniGame(Define.MiniGameType.GameSelect); });
+
+
 
     }
     void InterfaceUpdate()
@@ -545,9 +552,11 @@ class MineSweeper : MiniGame
         
     }
 
+    int Count = 0;
     public override void OnAwake()
     {
-        throw new System.NotImplementedException();
+        if (Count < 5) ++Count;
+        else status = GameStatus.Start;
     }
 
     public override void OnEnd()

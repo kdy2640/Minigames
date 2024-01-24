@@ -9,7 +9,7 @@ abstract class MiniGame
     {
         Awake, Start, InGame, Rest, Win, Fail, End
     }
-    public GameStatus status = GameStatus.Start;
+    public GameStatus status = GameStatus.Awake;
 
 
     abstract public void OnAwake();
@@ -31,6 +31,9 @@ abstract class MiniGame
                 break;
             case Define.MiniGameType.MineSweeper:
                 mg = new MineSweeper();
+                break;
+            case Define.MiniGameType.Count:
+                mg = new Main();
                 break;
             default:
                 mg = null;

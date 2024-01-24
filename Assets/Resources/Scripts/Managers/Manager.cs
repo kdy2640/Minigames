@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Manager : MonoBehaviour
 {
@@ -20,14 +22,23 @@ public class Manager : MonoBehaviour
 
     // variables
     private MiniGame _game = MiniGame.GetMinigame(_gameName);
-    private MiniGame game
+    private MiniGame game { get { return _game; } }
+
+    private static Define.MiniGameType _gameName = Define.MiniGameType.Count;
+
+    public void ChangeMiniGame(Define.MiniGameType _type)
     {
-        get { return _game;}
+        if(_type != Define.MiniGameType.Count)
+        {
+            SceneManager.LoadScene(_type.ToString());
+        }
+        else
+        {
+            SceneManager.LoadScene("Main");
+        }
+        _gameName = _type;
+        _game = MiniGame.GetMinigame(_gameName);
     }
-
-    private static Define.MiniGameType _gameName = Define.MiniGameType.GameSelect;
-    public Define.MiniGameType gameName { get { return _gameName;} set { _game = MiniGame.GetMinigame(value);  _gameName = value;  } }
-
     private static void init()
     {
         if (_manager == null)
