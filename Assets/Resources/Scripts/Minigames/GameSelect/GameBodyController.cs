@@ -92,7 +92,9 @@ public class GameBodyController : MonoBehaviour
         if (isEanble)
         {
             //¾À ¹Ù²Ù±â
-            Manager.manager.ChangeMiniGame((Define.MiniGameType)Enum.Parse(typeof(Define.MiniGameType), name));
+            GameSelect.GameType = (Define.MiniGameType)Enum.Parse(typeof(Define.MiniGameType), name);
+            Manager.manager.game.status = MiniGame.GameStatus.End;
+
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
-abstract class MiniGame
+public abstract class MiniGame
 {
     public enum GameStatus
     {

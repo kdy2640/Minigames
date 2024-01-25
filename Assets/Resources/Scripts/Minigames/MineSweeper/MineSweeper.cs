@@ -12,7 +12,7 @@ class MineSweeper : MiniGame
 {
 
     public Tilemap _TileMap = null;
-    Manager manager;
+    Manager manager = Manager.manager;
     MineSweeperGameInfo gameInfo;
     MineSweeperGameInfo.Difficulty difficulty = MineSweeperGameInfo.Difficulty.Easy;
     TableInfo tableInfo; CameraInfo cameraInfo;
@@ -63,7 +63,7 @@ class MineSweeper : MiniGame
 
         go = GameObject.Find("ExitButton");
         UnityEngine.UI.Button exitButton = go.GetComponent<UnityEngine.UI.Button>();
-        exitButton.onClick.AddListener(delegate { manager.ChangeMiniGame(Define.MiniGameType.GameSelect); });
+        exitButton.onClick.AddListener(delegate { status = GameStatus.End; });
 
 
 
@@ -102,26 +102,21 @@ class MineSweeper : MiniGame
         }
         _TileMap.ClearAllTiles();
         GameObject.Destroy(backGround);
-        status = GameStatus.Start;
+        status = GameStatus.Awake;
 
     }
     override public void OnStart()
     {
-        manager = Manager.manager;
-        if (manager == null) Debug.Log("NULL!");
-        InputManager input = manager.input;
-        input.OnMouseAction -= OnClick;
-        input.OnMouseAction += OnClick;
 
-        gameInfo = new MineSweeperGameInfo();
-
-        TableInit();
-        InterfaceInit();
-
-        LeftCellCount = tableInfo.width * tableInfo.height - tableInfo.bombCount;
-        audio = new MineSweeperSound();
-
-        status = GameStatus.InGame;
+        if (manager.scene.isClose)
+        {
+            manager.scene.OpenWindow();
+        }
+        else
+        {
+            status = GameStatus.InGame;
+            manager.scene.initializer();
+        }
     }
     override public void InGame()
     {
@@ -555,12 +550,27 @@ class MineSweeper : MiniGame
     int Count = 0;
     public override void OnAwake()
     {
-        if (Count < 5) ++Count;
-        else status = GameStatus.Start;
+        if (Count < 5) { Count++; return; }
+        manager = Manager.manager;
+        if (manager == null) Debug.Log("NULL!");
+        InputManager input = manager.input;
+        input.OnMouseAction -= OnClick;
+        input.OnMouseAction += OnClick;
+
+        gameInfo = new MineSweeperGameInfo();
+
+        TableInit();
+        InterfaceInit();
+
+        LeftCellCount = tableInfo.width * tableInfo.height - tableInfo.bombCount;
+        audio = new MineSweeperSound();
+
+        status = GameStatus.Start;
+
     }
 
     public override void OnEnd()
-    { 
-        throw new System.NotImplementedException();
+    {
+        if (manager.scene.CloseWindow()) manager.ChangeMiniGame(Define.MiniGameType.GameSelect);
     }
 }

@@ -22,10 +22,11 @@ public class Manager : MonoBehaviour
 
     // variables
     private MiniGame _game = MiniGame.GetMinigame(_gameName);
-    private MiniGame game { get { return _game; } }
+    public MiniGame game { get { return _game; } }
 
     private static Define.MiniGameType _gameName = Define.MiniGameType.Count;
 
+    public SceneController scene = new SceneController();
     public void ChangeMiniGame(Define.MiniGameType _type)
     {
         if(_type != Define.MiniGameType.Count)
@@ -38,12 +39,13 @@ public class Manager : MonoBehaviour
         }
         _gameName = _type;
         _game = MiniGame.GetMinigame(_gameName);
+        _game.status = MiniGame.GameStatus.Awake;
     }
     private static void init()
     {
         if (_manager == null)
         {
-            Manager mg = FindObjectOfType<Manager>();
+            Manager mg = GameObject.Find("@Manager").GetComponent<Manager>();
             if (mg == null)
             {
                 GameObject go = new GameObject("@Manager");
@@ -51,11 +53,13 @@ public class Manager : MonoBehaviour
                 DontDestroyOnLoad(go);
                 mg = go.GetComponent<Manager>();
             }
+            DontDestroyOnLoad(mg);
             _manager = mg;
         }
     }
     void Awake()
     {
+
         init();
     }
 

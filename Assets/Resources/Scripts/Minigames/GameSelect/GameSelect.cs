@@ -9,7 +9,7 @@ class GameSelect : MiniGame
 {
     Manager manager;
     InputManager input;
-
+    public static Define.MiniGameType GameType = Define.MiniGameType.MineSweeper;
 
 
     int CameraIndex = 0;
@@ -43,8 +43,17 @@ class GameSelect : MiniGame
     int Count = 0;
     public override void OnAwake()
     {
-        if (Count < 5) ++Count;
-        else status = GameStatus.Start;
+        if (Count < 5) { Count++; return; }
+
+        manager = Manager.manager;
+        input = manager.input;
+        input.OnMouseAction -= OnClick;
+        input.OnMouseAction += OnClick;
+
+        GameBodyInitializer();
+        ButtonInitializer();
+
+        status = GameStatus.Start;
     }
 
     bool isHold = false;
@@ -92,6 +101,7 @@ class GameSelect : MiniGame
 
     public override void OnEnd()
     {
+        if(manager.scene.CloseWindow()) manager.ChangeMiniGame(GameType);
     }
 
     public override void OnFail()
@@ -100,15 +110,17 @@ class GameSelect : MiniGame
 
     public override void OnStart()
     {
-        manager = Manager.manager;
-        input = manager.input;
-        input.OnMouseAction -= OnClick;
-        input.OnMouseAction += OnClick;
+        if(manager.scene.isClose)
+        {
+            manager.scene.OpenWindow();
+        }
+        else
+        {
+            status = GameStatus.Rest;
+            manager.scene.initializer();
+        }
 
-        GameBodyInitializer();
-        ButtonInitializer();
-        
-        status = GameStatus.Rest;
+
     }
 
 
@@ -224,7 +236,8 @@ class GameSelect : MiniGame
 
     void ExitButtonClicked()
     {
-        manager.ChangeMiniGame(Define.MiniGameType.Count);
+        status = GameStatus.End;
+        GameType = Define.MiniGameType.Count;
     }
 
     public override void OnWin()
