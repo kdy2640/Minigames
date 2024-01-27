@@ -6,6 +6,7 @@ TagManager:
   tags:
   - '@Manager'
   - '@TileMap'
+  - '@SceneChanger'
   layers:
   - Default
   - TransparentFX
